@@ -57,30 +57,57 @@ def prcp():
 @app.route("/api/v1.0/stations")
 def station():
     session = Session(engine)
-    results = session.query(Station.station)
+    results = session.query(Station.station, Station.name)
     session.close()
 
-    bs = []
+    station_list = []
 
-    for station in results:
-        stast = {}
-        stast["station"]=station
-        bs.append(stast)
-    return jsonify(results)
+    for station, name in results:
+        info = {}
+        info["station"] = station
+        info["name"] = name
+        station_list.append(info)
+    return jsonify(station_list)
 
-#@app.route("/api/v1.0/tobs")
-#def tobs():
-#    session = Session(engine)
-#   results = session.query(Measurement.date, Measurement.tobs).\
-#            filter(Measurement.station >= 'USC00519281').\
-#            filter(Measurement.date >= '2016-08-18').\
-#            order_by(Measurement.date).all()
-#    session.close()
-#    temp = list(np.ravel(results))
-#    return jsonify(temp)
+@app.route("/api/v1.0/tobs")
+def tobs():
+    session = Session(engine)
+    results = session.query(Measurement.date, Measurement.tobs).\
+            filter(Measurement.station >= 'USC00519281').\
+            filter(Measurement.date >= '2016-08-18').\
+            order_by(Measurement.date).all()
+    session.close()
 
-#@app.route("/api/v1.0/<start>")
+    tobs = []
+    popular = 'USC00519281'
+    for day, temp in results:
+        temp_info = {}
+        temp_info["station"] = popular
+        temp_info["date"] = day
+        temp_info["temp"] = temp
+        tobs.append(temp_info)     
+    return jsonify(tobs)
 
+@app.route("/api/v1.0/2016-08-23")
+# Start date: 2016-08-23 to End date: 2017-08-23
+def start():
+    session = Session(engine)
+    mn = func.min(Measurement.tobs)
+    mx = func.max(Measurement.tobs)
+    ag = func.avg(Measurement.tobs)
+    results = session.query(mn, mx, ag).\
+        filter(Measurement.date >= '2016-08-23').all()
+    session.close()
+
+    stats = []
+
+    for n, m, a in results:
+        info = {"Date Range": "2016-08-23 to End"}
+        info["min"] = n
+        info["max"] = m
+        info["avg"] = a
+        stats.append(info)
+    return jsonify(stats)
 #@app.route("/api/v1.0/<start>/<end>")
 
 if __name__ == '__main__':
